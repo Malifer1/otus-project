@@ -204,3 +204,8 @@ func validatePriority(priority TaskPriority) error {
 		return NewValidationError("invalid task priority")
 	}
 }
+
+// Геттер типа модели
+func (t *Task) GetType() string {
+    return "task"
+}
