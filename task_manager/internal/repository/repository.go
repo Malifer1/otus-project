@@ -1,32 +1,48 @@
 package repository
 
-import "task-manager/internal/model"
+import (
+    "task-manager/internal/model"
+)
 
-// Storage хранит разные типы моделей в отдельных слайсах
+// Storage - хранилище моделей
 type Storage struct {
-    Tasks []model.Model
-    Notes []model.Model
+    tasks []*model.Task  // Конкретный тип для задач
+    notes []*model.Note  // Конкретный тип для заметок
 }
 
-// Генерация нового хранилища
+// NewStorage создаёт новое хранилище
 func NewStorage() *Storage {
     return &Storage{
-        Tasks: make([]model.Model, 0),
-        Notes: make([]model.Model, 0),
+        tasks: make([]*model.Task, 0),
+        notes: make([]*model.Note, 0),
     }
 }
 
-// Добавление модели в соответствующий слайс на основе её типа
-func (s *Storage) AddModel(m model.Model) {
-    switch m.GetType() {
-    case "task":
-        s.Tasks = append(s.Tasks, m)
-    case "note":
-        s.Notes = append(s.Notes, m)
+// AddModel добавляет модель в соответствующий слайс с использованием type switch
+func (s *Storage) AddModel(m interface{}) error {
+    switch v := m.(type) {
+    case *model.Task:
+        s.tasks = append(s.tasks, v)
+        return nil
+    case *model.Note:
+        s.notes = append(s.notes, v)
+        return nil
+    default:
+        return model.NewValidationError("unknown model type")
     }
 }
 
-// Подсчет числа моделей каждого типа
+// GetTasks возвращает все задачи
+func (s *Storage) GetTasks() []*model.Task {
+    return s.tasks
+}
+
+// GetNotes возвращает все заметки
+func (s *Storage) GetNotes() []*model.Note {
+    return s.notes
+}
+
+// Count возвращает количество моделей каждого типа
 func (s *Storage) Count() (int, int) {
-    return len(s.Tasks), len(s.Notes)
+    return len(s.tasks), len(s.notes)
 }

@@ -1,4 +1,3 @@
-// cmd/test_generator/main.go
 package main
 
 import (
@@ -9,43 +8,51 @@ import (
 )
 
 func main() {
-    fmt.Println("Testing model generator!!!\n")
+    fmt.Println("=== Тестирование генератора моделей ===\n")
     
-    // Создаём хранилище
     storage := repository.NewStorage()
     
-    fmt.Println("Enabling generator...")
+    fmt.Println("Запускаем генератор моделей...")
     
+    // Запускаем генератор в горутине
     go func() {
-        service.GenerateModels(storage, 10)
-        fmt.Println("Генерация завершена!")
+        if err := service.GenerateModels(storage, 10); err != nil {
+            fmt.Printf("Ошибка генерации: %v\n", err)
+        } else {
+            fmt.Println("Генерация завершена!")
+        }
     }()
     
-	// Таймаут генератор
+    // Ждём, чтобы генератор успел поработать
     time.Sleep(2 * time.Second)
     
-    // Получение результатов
+    // Получаем результаты
     taskCount, noteCount := storage.Count()
     
-    fmt.Println("\nResults:")
+    fmt.Println("\n=== Результаты ===")
     fmt.Printf("Создано задач: %d\n", taskCount)
     fmt.Printf("Создано заметок: %d\n", noteCount)
     
     // Выводим все задачи
-    fmt.Println("\nСозданные задачи:")
-    for i, model := range storage.Tasks {
-        if task, ok := model.(interface{ GetTitle() string }); ok {
-            fmt.Printf("%d. %s (ID: %d)\n", i+1, task.GetTitle(), model.GetID())
-        }
+    fmt.Println("\n=== Созданные задачи ===")
+    for i, task := range storage.GetTasks() {
+        fmt.Printf("%d. %s (ID: %d, Статус: %s)\n", 
+            i+1, task.GetTitle(), task.GetID(), task.GetStatus())
     }
     
     // Выводим все заметки
-    fmt.Println("\nСозданные заметки:")
-    for i, model := range storage.Notes {
-        if note, ok := model.(interface{ GetTitle() string }); ok {
-            fmt.Printf("%d. %s (ID: %d)\n", i+1, note.GetTitle(), model.GetID())
-        }
+    fmt.Println("\n=== Созданные заметки ===")
+    for i, note := range storage.GetNotes() {
+        fmt.Printf("%d. %s (ID: %d, Создана: %v)\n", 
+            i+1, note.GetTitle(), note.GetID(), 
+            note.GetCreatedAt().Format("15:04:05"))
     }
     
-    fmt.Println("\nla fin")
+    // Тестируем добавление неизвестного типа
+    fmt.Println("\n=== Тест обработки ошибок ===")
+    if err := storage.AddModel("неизвестный тип"); err != nil {
+        fmt.Printf("Ожидаемая ошибка: %v\n", err)
+    }
+    
+    fmt.Println("\n=== Тест завершён ===")
 }

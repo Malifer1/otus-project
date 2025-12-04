@@ -26,10 +26,6 @@ func (n *Note) SetID(id int) {
     n.id = id
 }
 
-func (n *Note) GetType() string {
-    return "note"
-}
-
 func (n *Note) GetTitle() string {
     return n.title
 }

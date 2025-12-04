@@ -1,4 +1,3 @@
-// internal/service/generator.go
 package service
 
 import (
@@ -8,29 +7,35 @@ import (
 )
 
 // GenerateModels создаёт разные модели и передаёт их в репозиторий
-// Вызывается из main по интервалу
-func GenerateModels(repo *repository.Storage, count int) {
+func GenerateModels(storage *repository.Storage, count int) error {
     for i := 0; i < count; i++ {
-        // По очереди создаем задачу и заметку
         if i%2 == 0 {
-            // Создание задачи
+            // Создаём задачу
             dueDate := time.Now().Add(24 * time.Hour)
-            task, _ := model.NewTask(
+            task, err := model.NewTask(
                 "Задача из генератора",
                 "Описание сгенерированной задачи",
                 model.PriorityMedium,
                 &dueDate,
             )
-            task.SetID(i + 1)
-            repo.AddModel(task)
+            if err != nil {
+                return err
+            }
+            task.SetID(len(storage.GetTasks()) + 1)
+            
+            if err := storage.AddModel(task); err != nil {
+                return err
+            }
         } else {
-            // Создание заметки
+            // Создаём заметку
             note := model.NewNote("Заметка из генератора")
-            note.SetID(i + 1)
-            repo.AddModel(note)
-        }
-        
-        // Таймаут по генерации
+            note.SetID(len(storage.GetNotes()) + 1)
+            
+            if err := storage.AddModel(note); err != nil {
+                return err
+            }
+        }      
         time.Sleep(100 * time.Millisecond)
     }
+    return nil
 }
