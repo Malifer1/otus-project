@@ -1,4 +1,3 @@
-// internal/repository/repository.go
 package repository
 
 import (
@@ -8,52 +7,53 @@ import (
 
 // Storage - потокобезопасное хранилище
 type Storage struct {
-    tasks []model.Model
-    notes []model.Model
+    tasks []*model.Task
+    notes []*model.Note
     mu    sync.RWMutex
 }
 
 // NewStorage создаёт новое хранилище
 func NewStorage() *Storage {
     return &Storage{
-        tasks: make([]model.Model, 0),
-        notes: make([]model.Model, 0),
+        tasks: make([]*model.Task, 0),
+        notes: make([]*model.Note, 0),
     }
 }
 
 // AddModel добавляет модель в соответствующий слайс
-func (s *Storage) AddModel(m model.Model) error {
+func (s *Storage) AddModel(m interface{}) error {
     s.mu.Lock()
     defer s.mu.Unlock()
     
-    switch m.GetType() {
-    case "task":
-        s.tasks = append(s.tasks, m)
+    switch v := m.(type) {
+    case *model.Task:
+        s.tasks = append(s.tasks, v)
         return nil
-    case "note":
-        s.notes = append(s.notes, m)
+    case *model.Note:
+        s.notes = append(s.notes, v)
         return nil
     default:
         return model.NewValidationError("unknown model type")
     }
 }
 
-// GetTasks возвращает все задачи
-func (s *Storage) GetTasks() []model.Model {
+// GetTasks возвращает копию слайса с задачами
+func (s *Storage) GetTasks() []*model.Task {
     s.mu.RLock()
     defer s.mu.RUnlock()
     
-    tasks := make([]model.Model, len(s.tasks))
+    // Возвращаем копию для безопасности
+    tasks := make([]*model.Task, len(s.tasks))
     copy(tasks, s.tasks)
     return tasks
 }
 
-// GetNotes возвращает все заметки
-func (s *Storage) GetNotes() []model.Model {
+// GetNotes возвращает копию слайса с заметками
+func (s *Storage) GetNotes() []*model.Note {
     s.mu.RLock()
     defer s.mu.RUnlock()
     
-    notes := make([]model.Model, len(s.notes))
+    notes := make([]*model.Note, len(s.notes))
     copy(notes, s.notes)
     return notes
 }
@@ -66,31 +66,41 @@ func (s *Storage) Count() (int, int) {
 }
 
 // GetNewTasks возвращает задачи, добавленные после определённого индекса
-func (s *Storage) GetNewTasks(lastIndex int) []model.Model {
+func (s *Storage) GetNewTasks(lastIndex int) []*model.Task {
     s.mu.RLock()
     defer s.mu.RUnlock()
     
     if lastIndex >= len(s.tasks) {
-        return []model.Model{}
+        return []*model.Task{}
     }
     
     newTasks := s.tasks[lastIndex:]
-    result := make([]model.Model, len(newTasks))
+    result := make([]*model.Task, len(newTasks))
     copy(result, newTasks)
     return result
 }
 
 // GetNewNotes возвращает заметки, добавленные после определённого индекса
-func (s *Storage) GetNewNotes(lastIndex int) []model.Model {
+func (s *Storage) GetNewNotes(lastIndex int) []*model.Note {
     s.mu.RLock()
     defer s.mu.RUnlock()
     
     if lastIndex >= len(s.notes) {
-        return []model.Model{}
+        return []*model.Note{}
     }
     
     newNotes := s.notes[lastIndex:]
-    result := make([]model.Model, len(newNotes))
+    result := make([]*model.Note, len(newNotes))
     copy(result, newNotes)
     return result
+}
+
+// Cleanup освобождает ресурсы при завершении
+func (s *Storage) Cleanup() {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+    
+    // Очищаем слайсы (помогает сборщику мусора)
+    s.tasks = nil
+    s.notes = nil
 }
