@@ -72,3 +72,13 @@ func (n *Note) GetUpdatedAt() time.Time {
 func (n *Note) GetType() string {
     return "note"
 }
+
+// SetCreatedAt устанавливает дату создания заметки
+func (n *Note) SetCreatedAt(createdAt time.Time) {
+	n.createdAt = createdAt
+}
+
+// SetUpdatedAt устанавливает дату последнего обновления заметки
+func (n *Note) SetUpdatedAt(updatedAt time.Time) {
+	n.updatedAt = updatedAt
+}

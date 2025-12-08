@@ -13,9 +13,9 @@ import (
 )
 
 func main() {
-	fmt.Println("=== Многопоточная система Task Manager с Graceful Shutdown ===\n")
+	fmt.Println("=== Многопоточная система Task Manager с сохранением в файлы ===\n")
 
-	// Создаем контекст, который отменяется при получении сигнала
+	// Создаем контекст с отменой
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -23,11 +23,16 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	// Инициализация компонентов
-	storage := repository.NewStorage()
-	modelChan := make(chan interface{}, 10)
+	// Создаем директории если их нет
+	if err := os.MkdirAll("data", 0755); err != nil {
+		fmt.Printf("Ошибка создания директории data: %v\n", err)
+	}
 
-	// WaitGroup для отслеживания всех горутин
+	// Инициализация репозитория с указанием файлов
+	storage := repository.NewStorage("data/tasks", "data/notes")
+	defer storage.Cleanup() // Сохраняем данные при завершении
+
+	modelChan := make(chan interface{}, 10)
 	var wg sync.WaitGroup
 
 	// Запуск логера (работает каждые 200 мс)

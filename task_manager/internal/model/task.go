@@ -208,3 +208,13 @@ func validatePriority(priority TaskPriority) error {
 func (t *Task) GetType() string {
     return "task"
 }
+
+// SetCreatedAt устанавливает дату создания задачи
+func (t *Task) SetCreatedAt(createdAt time.Time) {
+	t.createdAt = createdAt
+}
+
+// SetUpdatedAt устанавливает дату последнего обновления задачи
+func (t *Task) SetUpdatedAt(updatedAt time.Time) {
+	t.updatedAt = updatedAt
+}
